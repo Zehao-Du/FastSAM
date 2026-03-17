@@ -166,16 +166,21 @@ class FastSAMPrompt:
 
         plt.axis('off')
         fig = plt.gcf()
-        plt.draw()
-
-        try:
-            buf = fig.canvas.tostring_rgb()
-        except AttributeError:
-            fig.canvas.draw()
-            buf = fig.canvas.tostring_rgb()
+        fig.canvas.draw()
+        
+        # 获取 RGBA buffer
+        buf = fig.canvas.buffer_rgba()
         cols, rows = fig.canvas.get_width_height()
-        img_array = np.frombuffer(buf, dtype=np.uint8).reshape(rows, cols, 3)
-        result = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+        
+        # 1. 先转为 RGBA 的 numpy 数组
+        img_array = np.frombuffer(buf, dtype=np.uint8).reshape(rows, cols, 4)
+        
+        # 2. 转换为 RGB (去掉 Alpha 通道)
+        img_rgb = img_array[:, :, :3]
+        
+        # 3. 再转换为 BGR 给 OpenCV 使用
+        result = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
+        
         plt.close()
         return result
             
